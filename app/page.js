@@ -1,0 +1,8 @@
+'use client'
+import dynamic from 'next/dynamic'
+
+const SocialManager = dynamic(() => import('../components/SocialManager'), { ssr: false })
+
+export default function Home() {
+  return <SocialManager />
+}
