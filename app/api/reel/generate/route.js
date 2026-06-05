@@ -19,28 +19,17 @@ export async function POST(request) {
     })
 
     const result = await res.json()
-    console.log('Creatomate full response:', JSON.stringify(result))
-
     if (!res.ok) return NextResponse.json({ error: JSON.stringify(result) }, { status: 400 })
 
-    // Creatomate returns a single render object (not array) when using source directly
-    // If it's an array, find the mp4 one
-    let render
-    if (Array.isArray(result)) {
-      render = result.find(r => r.output_format === 'mp4') || result.find(r => r.output_format !== 'jpg') || result[0]
-    } else {
-      render = result
-    }
+    // SDK shows POST returns Render[] array
+    const renders = Array.isArray(result) ? result : [result]
+    const mp4Render = renders.find(r => r.output_format === 'mp4') || renders[0]
 
-    console.log('Selected render:', render.id, render.output_format)
-
-    return NextResponse.json({ 
-      renderId: render.id, 
-      status: render.status, 
-      url: render.url || null,
-      outputFormat: render.output_format,
-      // Return ALL render IDs for debugging
-      allRenders: Array.isArray(result) ? result.map(r => ({ id: r.id, format: r.output_format, status: r.status })) : [{ id: render.id, format: render.output_format }]
+    return NextResponse.json({
+      renderId: mp4Render.id,
+      status: mp4Render.status,
+      url: mp4Render.url || null,
+      allRenders: renders.map(r => ({ id: r.id, format: r.output_format, status: r.status }))
     })
 
   } catch (error) {
@@ -48,17 +37,18 @@ export async function POST(request) {
   }
 }
 
-function rect(fillColor, opts = {}) {
+// REST API uses snake_case keys!
+function rect(fill_color, opts = {}) {
   return {
     type: 'shape',
     path: 'M 0 0 L 100 0 L 100 100 L 0 100 L 0 0 Z',
-    fillColor,
+    fill_color,
     width: opts.width || '100%',
     height: opts.height || '100%',
     x: opts.x || '50%',
     y: opts.y || '50%',
-    xAnchor: '50%',
-    yAnchor: '50%',
+    x_anchor: '50%',
+    y_anchor: '50%',
     time: opts.time ?? 0,
     duration: opts.duration ?? 15,
   }
@@ -70,30 +60,30 @@ function txt(text, y, opts = {}) {
     text,
     y,
     x: opts.x || '50%',
-    xAnchor: '50%',
-    yAnchor: '50%',
+    x_anchor: '50%',
+    y_anchor: '50%',
     width: opts.width || '80%',
-    fontSize: opts.fontSize || '40px',
-    fontWeight: opts.fontWeight || '400',
-    fillColor: opts.color || '#F5EDE8',
-    textAlign: 'center',
-    xAlignment: '50%',
+    font_size: opts.fontSize || '40px',
+    font_weight: opts.fontWeight || '400',
+    fill_color: opts.color || '#F5EDE8',
+    text_align: 'center',
+    x_alignment: '50%',
     time: opts.time ?? 0,
     duration: opts.duration ?? 15,
   }
-  if (opts.fontFamily) el.fontFamily = opts.fontFamily
+  if (opts.fontFamily) el.font_family = opts.fontFamily
   if (opts.animations) el.animations = opts.animations
   return el
 }
 
 function buildHowItWorksReel() {
   return {
-    outputFormat: 'mp4',
+    output_format: 'mp4',
     width: 1080,
     height: 1920,
     duration: 15,
-    frameRate: 30,
-    emojiStyle: 'apple',
+    frame_rate: 30,
+    emoji_style: 'apple',
     elements: [
       rect('#1A0810', { duration: 15 }),
       txt('🔢 AankMilaan', '6%', { fontSize: '58px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
@@ -118,12 +108,12 @@ function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleW
   const colors = { 1:'#FF6B6B',2:'#4ECDC4',3:'#FFD700',4:'#95A5A6',5:'#E8A87C',6:'#C84B31',7:'#9C6FDE',8:'#2ECC71',9:'#E74C3C' }
   const color = colors[lifePathNumber] || '#FFD700'
   return {
-    outputFormat: 'mp4',
+    output_format: 'mp4',
     width: 1080,
     height: 1920,
     duration: 12,
-    frameRate: 30,
-    emojiStyle: 'apple',
+    frame_rate: 30,
+    emoji_style: 'apple',
     elements: [
       rect('#1A0810', { duration: 12 }),
       txt('🔢 AankMilaan', '5%', { fontSize: '52px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
@@ -144,12 +134,12 @@ function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleW
 function buildMatchReveal({ name1='Priya', name2='Arjun', lifePathNumber1=3, lifePathNumber2=6, compatibilityScore=87, city='Mumbai' }) {
   const scoreColor = compatibilityScore >= 75 ? '#4CAF50' : compatibilityScore >= 60 ? '#FFD700' : '#C84B31'
   return {
-    outputFormat: 'mp4',
+    output_format: 'mp4',
     width: 1080,
     height: 1920,
     duration: 12,
-    frameRate: 30,
-    emojiStyle: 'apple',
+    frame_rate: 30,
+    emoji_style: 'apple',
     elements: [
       rect('#1A0810', { duration: 12 }),
       txt('🔢 AankMilaan', '6%', { fontSize: '52px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
