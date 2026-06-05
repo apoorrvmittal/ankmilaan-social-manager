@@ -94,7 +94,7 @@ function PostCard({ post, onGenerate, generating, onPost, posting }) {
   );
 }
 
-export default function AankMilaanSocialManager() {
+export default function AankMilaanSocialManager({ onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [posts, setPosts] = useState([
     { id: 1, type: "image", caption: "🔢 Your life path number reveals your perfect match! #AankMilaan #NumerologyLove #Shaadi", scheduled: "Today 9:00 AM", status: "posted", likes: 342, comments: 28, reach: 4200, mediaHint: "couple silhouette with numerology symbols" },
@@ -245,6 +245,12 @@ export default function AankMilaanSocialManager() {
             </div>
           </div>
           <div style={{ width: 10, height: 10, borderRadius: "50%", background: igMetrics ? "#4CAF50" : "#FFD700", boxShadow: `0 0 8px ${igMetrics ? "#4CAF50" : "#FFD700"}` }} />
+          {onLogout && (
+            <button onClick={onLogout}
+              style={{ background: "transparent", border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "6px 12px", color: BRAND.colors.muted, fontSize: 12, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
+              🚪 Logout
+            </button>
+          )}
         </div>
       </div>
 
