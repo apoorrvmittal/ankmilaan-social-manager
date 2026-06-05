@@ -10,7 +10,6 @@ export async function POST(request) {
     else source = buildMatchReveal(data)
 
     // Creatomate expects: POST /v1/renders with body { "source": <JSON string> }
-    const payload = { source: JSON.stringify(source) }
 
     const res = await fetch('https://api.creatomate.com/v1/renders', {
       method: 'POST',
@@ -18,7 +17,7 @@ export async function POST(request) {
         'Authorization': `Bearer ${process.env.CREATOMATE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ source })
     })
 
     const result = await res.json()
