@@ -1,5 +1,5 @@
-import ReelsTab from "./ReelsTab"
 import { useState, useEffect, useRef } from "react";
+import ReelsTab from "./ReelsTab";
 
 const BRAND = {
   colors: {
@@ -66,22 +66,16 @@ function PostCard({ post, onGenerate, generating, onPost, posting }) {
         </div>
         <span style={{ color: BRAND.colors.muted, fontSize: 11 }}>{post.scheduled}</span>
       </div>
-
-      {post.imageUrl && (
-        <img src={post.imageUrl} alt="post" style={{ width: "100%", borderRadius: 8, maxHeight: 200, objectFit: "cover" }} />
-      )}
-
+      {post.imageUrl && <img src={post.imageUrl} alt="post" style={{ width: "100%", borderRadius: 8, maxHeight: 200, objectFit: "cover" }} />}
       <div style={{ background: BRAND.colors.surface, borderRadius: 8, padding: "10px 12px", fontSize: 12, color: BRAND.colors.text, lineHeight: 1.5, border: `1px dashed ${BRAND.colors.border}` }}>
         {!post.imageUrl && <div style={{ color: BRAND.colors.muted, fontSize: 10, marginBottom: 4 }}>📸 Media: {post.mediaHint}</div>}
         {post.caption}
       </div>
-
       {post.status === "posted" && (
         <div style={{ display: "flex", gap: 16, fontSize: 12, color: BRAND.colors.muted }}>
-          <span>❤️ {post.likes}</span><span>💬 {post.comments}</span><span>👁️ {(post.reach||0).toLocaleString()}</span>
+          <span>❤️ {post.likes}</span><span>💬 {post.comments}</span><span>👁️ {(post.reach || 0).toLocaleString()}</span>
         </div>
       )}
-
       <div style={{ display: "flex", gap: 8 }}>
         {post.status === "draft" && (
           <button onClick={() => onGenerate(post.id)} disabled={generating === post.id}
@@ -96,8 +90,6 @@ function PostCard({ post, onGenerate, generating, onPost, posting }) {
           </button>
         )}
       </div>
-
-        {tab === "reels" && <ReelsTab />}
     </div>
   );
 }
@@ -125,21 +117,15 @@ export default function AankMilaanSocialManager() {
   const fileInputRef = useRef(null);
   const activeUploadId = useRef(null);
 
-  useEffect(() => {
-    fetchMetrics();
-  }, []);
+  useEffect(() => { fetchMetrics(); }, []);
 
   const fetchMetrics = async () => {
     setMetricsLoading(true);
     try {
       const res = await fetch("/api/instagram/metrics");
       const data = await res.json();
-      if (data.profile && !data.profile.error) {
-        setIgMetrics(data.profile);
-      }
-      if (data.media?.data) {
-        setIgMedia(data.media.data);
-      }
+      if (data.profile && !data.profile.error) setIgMetrics(data.profile);
+      if (data.media?.data) setIgMedia(data.media.data);
     } catch (e) { console.error(e); }
     setMetricsLoading(false);
   };
@@ -175,9 +161,7 @@ export default function AankMilaanSocialManager() {
       formData.append("image", file);
       const res = await fetch("/api/instagram/upload", { method: "POST", body: formData });
       const data = await res.json();
-      if (data.url) {
-        setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, imageUrl: data.url, status: "scheduled" } : p));
-      }
+      if (data.url) setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, imageUrl: data.url, status: "scheduled" } : p));
     } catch (e) { console.error(e); }
     setUploadingId(null);
     e.target.value = "";
@@ -202,7 +186,7 @@ export default function AankMilaanSocialManager() {
         setPostResult({ success: false, message: `❌ ${data.error}` });
       }
     } catch (e) {
-      setPostResult({ success: false, message: "❌ Failed to post. Check your connection." });
+      setPostResult({ success: false, message: "❌ Failed to post." });
     }
     setPosting(null);
   };
@@ -218,16 +202,16 @@ export default function AankMilaanSocialManager() {
     setAiLoading(false);
   };
 
-  const tabs = [
+  const TABS = [
     { id: "dashboard", label: "📊 Dashboard" },
     { id: "posts", label: "📅 Content Queue" },
     { id: "campaigns", label: "🎯 Campaigns" },
-    { id: "ai", label: "🤖 AI Strategist" },
     { id: "reels", label: "🎬 Auto Reels" },
+    { id: "ai", label: "🤖 AI Strategist" },
   ];
 
   const tabStyle = (id) => ({
-    padding: "10px 20px", background: tab === id ? BRAND.colors.primary : "transparent",
+    padding: "10px 18px", background: tab === id ? BRAND.colors.primary : "transparent",
     color: tab === id ? "#fff" : BRAND.colors.muted,
     border: `1px solid ${tab === id ? BRAND.colors.primary : BRAND.colors.border}`,
     borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: tab === id ? 700 : 400,
@@ -266,7 +250,7 @@ export default function AankMilaanSocialManager() {
 
       {/* Tabs */}
       <div style={{ padding: "16px 28px", display: "flex", gap: 8, borderBottom: `1px solid ${BRAND.colors.border}`, overflowX: "auto" }}>
-        {tabs.map((t) => <button key={t.id} style={tabStyle(t.id)} onClick={() => setTab(t.id)}>{t.label}</button>)}
+        {TABS.map((t) => <button key={t.id} style={tabStyle(t.id)} onClick={() => setTab(t.id)}>{t.label}</button>)}
       </div>
 
       <div style={{ padding: "24px 28px" }}>
@@ -277,21 +261,18 @@ export default function AankMilaanSocialManager() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4 }}>Weekly Overview</div>
-                <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Live Instagram data · {new Date().toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})}</div>
+                <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Live Instagram data · {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
               </div>
               <button onClick={fetchMetrics} style={{ background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "8px 14px", color: BRAND.colors.secondary, fontSize: 12, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
                 {metricsLoading ? "Syncing..." : "🔄 Refresh"}
               </button>
             </div>
-
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 28 }}>
-              <MetricCard label="Followers" value={followers} growth={234} data={[12420,12490,12550,12610,12690,12760,followers]} color={BRAND.colors.primary} />
-              <MetricCard label="Total Posts" value={mediaCount} growth={7} data={[41,42,43,44,45,46,mediaCount]} color={BRAND.colors.secondary} />
-              <MetricCard label="Engagement" value={6.8} growth={1.2} data={[4.2,5.1,4.8,6.2,5.8,7.1,6.8]} color={BRAND.colors.accent} suffix="%" />
-              <MetricCard label="Impressions" value={91500} growth={8700} data={[9800,12100,10500,15200,13100,16800,14000]} color="#9C6FDE" />
+              <MetricCard label="Followers" value={followers} growth={234} data={[12420, 12490, 12550, 12610, 12690, 12760, followers]} color={BRAND.colors.primary} />
+              <MetricCard label="Total Posts" value={mediaCount} growth={7} data={[41, 42, 43, 44, 45, 46, mediaCount]} color={BRAND.colors.secondary} />
+              <MetricCard label="Engagement" value={6.8} growth={1.2} data={[4.2, 5.1, 4.8, 6.2, 5.8, 7.1, 6.8]} color={BRAND.colors.accent} suffix="%" />
+              <MetricCard label="Impressions" value={91500} growth={8700} data={[9800, 12100, 10500, 15200, 13100, 16800, 14000]} color="#9C6FDE" />
             </div>
-
-            {/* Live Instagram Media */}
             {igMedia.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 14 }}>📸 Recent Instagram Posts</div>
@@ -301,8 +282,7 @@ export default function AankMilaanSocialManager() {
                       {m.media_url && <img src={m.media_url} alt="" style={{ width: "100%", height: 120, objectFit: "cover" }} />}
                       <div style={{ padding: "8px 10px" }}>
                         <div style={{ fontSize: 11, color: BRAND.colors.muted, display: "flex", gap: 8 }}>
-                          <span>❤️ {m.like_count||0}</span>
-                          <span>💬 {m.comments_count||0}</span>
+                          <span>❤️ {m.like_count || 0}</span><span>💬 {m.comments_count || 0}</span>
                         </div>
                       </div>
                     </div>
@@ -310,7 +290,6 @@ export default function AankMilaanSocialManager() {
                 </div>
               </div>
             )}
-
             <div style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 12, padding: 18 }}>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, marginBottom: 12 }}>💡 AI Content Ideas</div>
               {CONTENT_IDEAS.map((idea, i) => (
@@ -333,15 +312,13 @@ export default function AankMilaanSocialManager() {
                 + New Post
               </button>
             </div>
-
             {postResult && (
               <div style={{ background: postResult.success ? "#4CAF5022" : "#f4433622", border: `1px solid ${postResult.success ? "#4CAF50" : "#f44336"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 13 }}>
                 {postResult.message}
               </div>
             )}
-
             <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-              {["image","reel","story","carousel"].map((t) => (
+              {["image", "reel", "story", "carousel"].map((t) => (
                 <button key={t} onClick={() => setNewPostType(t)}
                   style={{ background: newPostType === t ? `${BRAND.colors.primary}33` : BRAND.colors.card, border: `1px solid ${newPostType === t ? BRAND.colors.primary : BRAND.colors.border}`, borderRadius: 8, padding: "6px 14px", color: newPostType === t ? BRAND.colors.primary : BRAND.colors.muted, fontSize: 12, cursor: "pointer", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>
                   {typeIcon(t)} {t}
@@ -350,7 +327,6 @@ export default function AankMilaanSocialManager() {
               <input type="text" placeholder="Schedule time (e.g. Tomorrow 6PM)" value={newPostTime} onChange={(e) => setNewPostTime(e.target.value)}
                 style={{ flex: 1, minWidth: 180, background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "6px 14px", color: BRAND.colors.text, fontSize: 12, outline: "none", fontFamily: "'Nunito', sans-serif" }} />
             </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               {posts.map((p) => (
                 <div key={p.id}>
@@ -375,7 +351,9 @@ export default function AankMilaanSocialManager() {
               <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Monitor Instagram ad performance</div>
             </div>
             {CAMPAIGNS.map((c) => {
-              const spentPct = parseInt(c.budget.replace(/[₹,]/g,"")) > 0 ? Math.round((parseInt(c.spent.replace(/[₹,]/g,"")) / parseInt(c.budget.replace(/[₹,]/g,""))) * 100) : 0;
+              const spentNum = parseInt(c.spent.replace(/[₹,]/g, ""));
+              const budgetNum = parseInt(c.budget.replace(/[₹,]/g, ""));
+              const spentPct = budgetNum > 0 ? Math.round((spentNum / budgetNum) * 100) : 0;
               return (
                 <div key={c.id} style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
@@ -394,7 +372,7 @@ export default function AankMilaanSocialManager() {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 20 }}>
-                    {[{label:"Reach",value:c.reach.toLocaleString()},{label:"Clicks",value:c.clicks.toLocaleString()},{label:"Conversions",value:c.conversions},{label:"CTR",value:c.clicks>0?`${((c.clicks/c.reach)*100).toFixed(1)}%`:"—"}].map((stat) => (
+                    {[{ label: "Reach", value: c.reach.toLocaleString() }, { label: "Clicks", value: c.clicks.toLocaleString() }, { label: "Conversions", value: c.conversions }, { label: "CTR", value: c.clicks > 0 ? `${((c.clicks / c.reach) * 100).toFixed(1)}%` : "—" }].map((stat) => (
                       <div key={stat.label}>
                         <div style={{ fontSize: 11, color: BRAND.colors.muted, marginBottom: 2 }}>{stat.label}</div>
                         <div style={{ fontSize: 18, fontWeight: 700 }}>{stat.value}</div>
@@ -407,6 +385,9 @@ export default function AankMilaanSocialManager() {
           </div>
         )}
 
+        {/* AUTO REELS */}
+        {tab === "reels" && <ReelsTab />}
+
         {/* AI STRATEGIST */}
         {tab === "ai" && (
           <div>
@@ -415,7 +396,7 @@ export default function AankMilaanSocialManager() {
               <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Ask anything about growing AankMilaan on Instagram</div>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-              {["Best posting times for Indian matrimony audience?","How to get more reels views?","Content calendar for next 7 days","How to increase story views?","Hashtag strategy for numerology niche"].map((q) => (
+              {["Best posting times for Indian matrimony audience?", "How to get more reels views?", "Content calendar for next 7 days", "How to increase story views?", "Hashtag strategy for numerology niche"].map((q) => (
                 <button key={q} onClick={() => setAiPrompt(q)}
                   style={{ background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 20, padding: "6px 14px", color: BRAND.colors.secondary, fontSize: 12, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
                   {q}
@@ -433,14 +414,21 @@ export default function AankMilaanSocialManager() {
             {(aiLoading || aiResponse) && (
               <div style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 12, color: BRAND.colors.muted, marginBottom: 10 }}>🤖 AI Strategist</div>
-                {aiLoading ? <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Thinking...</div>
+                {aiLoading
+                  ? <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Thinking...</div>
                   : <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{aiResponse}</div>}
               </div>
             )}
             {!aiResponse && !aiLoading && (
               <div style={{ background: BRAND.colors.card, border: `1px dashed ${BRAND.colors.border}`, borderRadius: 12, padding: 20 }}>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, marginBottom: 12 }}>📌 AankMilaan Growth Playbook</div>
-                {[{title:"Post Frequency",tip:"1 Feed post + 3-5 Stories + 2 Reels per week"},{title:"Best Times",tip:"8-9 AM, 1-2 PM, 7-9 PM IST"},{title:"Top Content",tip:"Reels > Carousels > Stories"},{title:"Hashtags",tip:"3 niche + 3 medium + 2 broad per post"},{title:"Growth Hack",tip:"Collab reels with astrology/kundali creators"}].map((item) => (
+                {[
+                  { title: "Post Frequency", tip: "1 Feed post + 3-5 Stories + 2 Reels per week" },
+                  { title: "Best Times", tip: "8-9 AM, 1-2 PM, 7-9 PM IST" },
+                  { title: "Top Content", tip: "Reels > Carousels > Stories" },
+                  { title: "Hashtags", tip: "3 niche + 3 medium + 2 broad per post" },
+                  { title: "Growth Hack", tip: "Collab reels with astrology/kundali creators" },
+                ].map((item) => (
                   <div key={item.title} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
                     <div style={{ color: BRAND.colors.primary, fontWeight: 700, minWidth: 130, fontSize: 13 }}>{item.title}</div>
                     <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>{item.tip}</div>
@@ -454,5 +442,3 @@ export default function AankMilaanSocialManager() {
     </div>
   );
 }
-
-// This file gets the Reels tab injected via patch - see ReelsTab component below
