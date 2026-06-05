@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 
-// Creates the AankMilaan Match Reveal template on Creatomate
-// Call this ONCE from the browser to get your template ID
 export async function POST() {
   try {
     const res = await fetch('https://api.creatomate.com/v1/templates', {
@@ -12,216 +10,191 @@ export async function POST() {
       },
       body: JSON.stringify({
         name: 'AankMilaan Match Reveal Reel',
-        source: {
+        source: JSON.stringify({
           output_format: 'mp4',
           width: 1080,
           height: 1920,
           duration: 15,
+          fills: [{ type: 'color', value: '#0D0A0B' }],
           elements: [
-            // Background gradient
             {
               type: 'rectangle',
-              track: 1,
-              time: 0, duration: 15,
-              x: '50%', y: '50%',
               width: '100%', height: '100%',
-              fill_color: ['#1A0810', '#0D0A0B', '#2A1020'],
+              x: '50%', y: '50%',
+              x_anchor: '50%', y_anchor: '50%',
+              fills: [{ type: 'color', value: '#1A0810' }]
             },
-            // Top tagline
             {
               type: 'text',
-              track: 2,
               name: 'Tagline',
-              time: 0.5, duration: 14,
               text: 'Matched by the Numbers ✨',
-              x: '50%', y: '8%',
+              y: '8%', x: '50%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '85%',
               font_family: 'Playfair Display',
-              font_size: '38 vmin',
+              font_size: '7vmin',
               font_weight: '700',
-              fill_color: '#E8A87C',
-              x_alignment: '50%',
-              animations: [{ type: 'fade', time: 'start', duration: 1 }]
+              color: '#E8A87C',
+              text_align: 'center'
             },
-            // Divider line
-            {
-              type: 'rectangle',
-              track: 2,
-              time: 1, duration: 13,
-              x: '50%', y: '14%',
-              width: '60%', height: '2px',
-              fill_color: '#3A2830',
-            },
-            // Name 1
             {
               type: 'text',
-              track: 3,
               name: 'Name-1',
-              time: 1, duration: 13,
-              text: 'Priya Sharma',
+              text: 'Name 1',
               x: '25%', y: '28%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '42%',
               font_family: 'Nunito',
-              font_size: '52 vmin',
+              font_size: '6vmin',
               font_weight: '700',
-              fill_color: '#F5EDE8',
-              x_alignment: '50%',
-              animations: [{ type: 'slide', direction: '270deg', time: 'start', duration: 1 }]
+              color: '#F5EDE8',
+              text_align: 'center'
             },
-            // Life Path 1
             {
               type: 'text',
-              track: 3,
               name: 'Life-Path-1',
-              time: 1.2, duration: 13,
               text: 'Life Path 3',
               x: '25%', y: '35%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '42%',
               font_family: 'Nunito',
-              font_size: '30 vmin',
-              fill_color: '#C84B31',
-              x_alignment: '50%',
+              font_size: '4vmin',
+              color: '#C84B31',
+              text_align: 'center'
             },
-            // Heart
             {
               type: 'text',
-              track: 4,
-              time: 2, duration: 12,
               text: '💕',
               x: '50%', y: '31%',
-              font_size: '70 vmin',
-              x_alignment: '50%',
-              animations: [{ type: 'scale', time: 'start', duration: 0.5, easing: 'bounce-out' }]
+              x_anchor: '50%', y_anchor: '50%',
+              font_size: '10vmin',
+              text_align: 'center'
             },
-            // Name 2
             {
               type: 'text',
-              track: 5,
               name: 'Name-2',
-              time: 1, duration: 13,
-              text: 'Arjun Mehta',
+              text: 'Name 2',
               x: '75%', y: '28%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '42%',
               font_family: 'Nunito',
-              font_size: '52 vmin',
+              font_size: '6vmin',
               font_weight: '700',
-              fill_color: '#F5EDE8',
-              x_alignment: '50%',
-              animations: [{ type: 'slide', direction: '90deg', time: 'start', duration: 1 }]
+              color: '#F5EDE8',
+              text_align: 'center'
             },
-            // Life Path 2
             {
               type: 'text',
-              track: 5,
               name: 'Life-Path-2',
-              time: 1.2, duration: 13,
               text: 'Life Path 6',
               x: '75%', y: '35%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '42%',
               font_family: 'Nunito',
-              font_size: '30 vmin',
-              fill_color: '#C84B31',
-              x_alignment: '50%',
+              font_size: '4vmin',
+              color: '#C84B31',
+              text_align: 'center'
             },
-            // Score label
             {
               type: 'text',
-              track: 6,
-              time: 3, duration: 11,
               text: 'Compatibility Score',
               x: '50%', y: '53%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '80%',
               font_family: 'Nunito',
-              font_size: '28 vmin',
-              fill_color: '#8A7070',
-              x_alignment: '50%',
-              animations: [{ type: 'fade', time: 'start', duration: 0.8 }]
+              font_size: '4vmin',
+              color: '#8A7070',
+              text_align: 'center'
             },
-            // Score value - BIG
             {
               type: 'text',
-              track: 6,
               name: 'Score',
-              time: 3.5, duration: 11,
               text: '87%',
               x: '50%', y: '63%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '80%',
               font_family: 'Playfair Display',
-              font_size: '130 vmin',
+              font_size: '20vmin',
               font_weight: '700',
-              fill_color: '#FFD700',
-              x_alignment: '50%',
-              animations: [{ type: 'counter', time: 'start', duration: 2 }, { type: 'scale', time: 'start', duration: 0.8, easing: 'bounce-out' }]
+              color: '#FFD700',
+              text_align: 'center'
             },
-            // City
             {
               type: 'text',
-              track: 7,
               name: 'City',
-              time: 4, duration: 10,
-              text: '📍 Mumbai',
-              x: '50%', y: '77%',
+              text: '📍 India',
+              x: '50%', y: '76%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '80%',
               font_family: 'Nunito',
-              font_size: '28 vmin',
-              fill_color: '#8A7070',
-              x_alignment: '50%',
+              font_size: '4vmin',
+              color: '#8A7070',
+              text_align: 'center'
             },
-            // Divider
-            {
-              type: 'rectangle',
-              track: 7,
-              time: 4, duration: 10,
-              x: '50%', y: '82%',
-              width: '60%', height: '2px',
-              fill_color: '#3A2830',
-            },
-            // Brand name
             {
               type: 'text',
-              track: 8,
-              time: 4.5, duration: 10,
               text: '🔢 AankMilaan',
               x: '50%', y: '87%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '80%',
               font_family: 'Playfair Display',
-              font_size: '40 vmin',
+              font_size: '6vmin',
               font_weight: '700',
-              fill_color: '#C84B31',
-              x_alignment: '50%',
-              animations: [{ type: 'fade', time: 'start', duration: 1 }]
+              color: '#C84B31',
+              text_align: 'center'
             },
-            // Tagline bottom
             {
               type: 'text',
-              track: 8,
-              time: 5, duration: 9,
+              name: 'Tagline-Bottom',
               text: 'Find your match at AankMilaan.com',
               x: '50%', y: '93%',
+              x_anchor: '50%', y_anchor: '50%',
               width: '80%',
               font_family: 'Nunito',
-              font_size: '22 vmin',
-              fill_color: '#E8A87C',
-              x_alignment: '50%',
-            },
+              font_size: '3vmin',
+              color: '#E8A87C',
+              text_align: 'center'
+            }
           ]
-        }
+        })
       })
     })
 
     const data = await res.json()
+    
+    // Log full response for debugging
+    console.log('Creatomate response:', JSON.stringify(data))
 
-    if (!res.ok) {
-      return NextResponse.json({ error: data.message || 'Template creation failed', details: data }, { status: 400 })
+    if (data.id) {
+      return NextResponse.json({
+        success: true,
+        templateId: data.id,
+        message: `Template created! Add CREATOMATE_TEMPLATE_ID=${data.id} to Vercel env vars.`
+      })
     }
 
-    return NextResponse.json({
-      success: true,
-      templateId: data.id,
-      name: data.name,
-      message: `Template created! Add CREATOMATE_TEMPLATE_ID=${data.id} to your Vercel env vars.`
-    })
+    return NextResponse.json({ 
+      error: data.message || data.error || 'Template creation failed',
+      details: data
+    }, { status: 400 })
+
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+// GET - check existing template
+export async function GET() {
+  try {
+    const templateId = process.env.CREATOMATE_TEMPLATE_ID
+    if (!templateId) return NextResponse.json({ error: 'No template ID set' })
+
+    const res = await fetch(`https://api.creatomate.com/v1/templates/${templateId}`, {
+      headers: { 'Authorization': `Bearer ${process.env.CREATOMATE_API_KEY}` }
+    })
+    const data = await res.json()
+    return NextResponse.json({ template: data })
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
