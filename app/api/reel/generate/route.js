@@ -9,8 +9,6 @@ export async function POST(request) {
     else if (reelType === 'numerology_explainer') source = buildNumerologyExplainer(data)
     else source = buildMatchReveal(data)
 
-    // Creatomate expects: POST /v1/renders with body { "source": <JSON string> }
-
     const res = await fetch('https://api.creatomate.com/v1/renders', {
       method: 'POST',
       headers: {
@@ -21,6 +19,7 @@ export async function POST(request) {
     })
 
     const result = await res.json()
+    console.log('Creatomate response:', JSON.stringify(result))
 
     if (!res.ok) {
       return NextResponse.json({ error: JSON.stringify(result) }, { status: 400 })
@@ -34,61 +33,76 @@ export async function POST(request) {
   }
 }
 
-function el(type, props) {
-  return { type, ...props }
-}
-
-function txt(text, x, y, fontSize, color, extra = {}) {
-  return el('text', {
-    text, x, y,
-    xAnchor: '50%', yAnchor: '50%',
-    width: extra.width || '80%',
-    fontSize,
-    fillColor: color,
-    textAlign: extra.textAlign || 'center',
-    fontFamily: extra.fontFamily || 'Nunito',
-    fontWeight: extra.fontWeight || '400',
-    time: extra.time ?? 0,
-    duration: extra.duration ?? 15,
-    ...( extra.animations ? { animations: extra.animations } : {} )
-  })
-}
-
-function buildHowItWorksReel() {
+// Minimal valid Creatomate source - using only documented properties
+function baseSource(duration = 12) {
   return {
     outputFormat: 'mp4',
     width: 1080,
     height: 1920,
-    duration: 15,
+    duration,
     frameRate: 30,
-    fillColor: '#0D0A0B',
+    backgroundColor: '#0D0A0B',
+  }
+}
+
+function textEl(text, opts = {}) {
+  const el = {
+    type: 'text',
+    text,
+    width: opts.width || '80%',
+    height: 'auto',
+    x: opts.x || '50%',
+    y: opts.y || '50%',
+    xAnchor: '50%',
+    yAnchor: '50%',
+    fontSize: opts.fontSize || '40px',
+    fontWeight: opts.fontWeight || '400',
+    color: opts.color || '#F5EDE8',
+    textAlign: 'center',
+  }
+  if (opts.fontFamily) el.fontFamily = opts.fontFamily
+  if (opts.time !== undefined) el.time = opts.time
+  if (opts.duration !== undefined) el.duration = opts.duration
+  if (opts.animations) el.animations = opts.animations
+  return el
+}
+
+function rectEl(opts = {}) {
+  return {
+    type: 'rectangle',
+    x: opts.x || '50%',
+    y: opts.y || '50%',
+    xAnchor: '50%',
+    yAnchor: '50%',
+    width: opts.width || '100%',
+    height: opts.height || '100%',
+    color: opts.color || '#1A0810',
+    time: opts.time ?? 0,
+    duration: opts.duration ?? 15,
+  }
+}
+
+function buildHowItWorksReel() {
+  return {
+    ...baseSource(15),
     elements: [
-      el('rectangle', { width: '100%', height: '100%', x: '0%', y: '0%', xAnchor: '0%', yAnchor: '0%', fillColor: '#1A0810' }),
-      txt('🔢 AankMilaan', '50%', '6%', '58px', '#C84B31', { fontFamily: 'Playfair Display', fontWeight: '700', duration: 15 }),
-      txt('How It Works', '50%', '12%', '38px', '#E8A87C', { duration: 15 }),
-      el('rectangle', { x: '50%', y: '16%', xAnchor: '50%', yAnchor: '50%', width: '65%', height: '3px', fillColor: '#3A2830', time: 0, duration: 15 }),
+      rectEl({ color: '#1A0810' }),
 
-      // Step 1
-      txt('📝', '50%', '24%', '80px', '#F5EDE8', { time: 1, duration: 14, animations: [{ time: 'start', duration: 0.5, type: 'scale', easing: 'bounce-out' }] }),
-      txt('Step 1', '50%', '30%', '28px', '#C84B31', { fontWeight: '700', time: 1.2, duration: 13 }),
-      txt('Enter Your Details', '50%', '35%', '44px', '#F5EDE8', { fontWeight: '700', time: 1.4, duration: 13, animations: [{ time: 'start', duration: 0.6, type: 'fade' }] }),
-      txt('Name, date of birth & preferences', '50%', '40%', '28px', '#8A7070', { time: 1.6, duration: 12 }),
+      textEl('🔢 AankMilaan', { y: '6%', fontSize: '58px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
+      textEl('How It Works', { y: '12%', fontSize: '38px', color: '#E8A87C' }),
 
-      el('rectangle', { x: '50%', y: '44%', xAnchor: '50%', yAnchor: '50%', width: '55%', height: '2px', fillColor: '#2A1820', time: 2, duration: 13 }),
+      textEl('📝', { y: '24%', fontSize: '80px', time: 1, duration: 14, animations: [{ type: 'scale', time: 'start', duration: 0.5, easing: 'bounce-out' }] }),
+      textEl('Step 1 — Enter Your Details', { y: '32%', fontSize: '42px', fontWeight: '700', color: '#F5EDE8', time: 1.3, duration: 13 }),
+      textEl('Name, date of birth & preferences', { y: '38%', fontSize: '28px', color: '#8A7070', time: 1.5, duration: 12 }),
 
-      // Step 2
-      txt('🔢', '50%', '50%', '80px', '#F5EDE8', { time: 2, duration: 13, animations: [{ time: 'start', duration: 0.5, type: 'scale', easing: 'bounce-out' }] }),
-      txt('Step 2', '50%', '56%', '28px', '#C84B31', { fontWeight: '700', time: 2.2, duration: 12 }),
-      txt('Chaldean Numerology', '50%', '61%', '44px', '#F5EDE8', { fontWeight: '700', time: 2.4, duration: 12, animations: [{ time: 'start', duration: 0.6, type: 'fade' }] }),
-      txt('We calculate your Life Path number', '50%', '66%', '28px', '#8A7070', { time: 2.6, duration: 11 }),
+      textEl('🔢', { y: '50%', fontSize: '80px', time: 2, duration: 13, animations: [{ type: 'scale', time: 'start', duration: 0.5, easing: 'bounce-out' }] }),
+      textEl('Step 2 — Chaldean Numerology', { y: '58%', fontSize: '42px', fontWeight: '700', color: '#F5EDE8', time: 2.3, duration: 12 }),
+      textEl('We calculate your Life Path number', { y: '64%', fontSize: '28px', color: '#8A7070', time: 2.5, duration: 11 }),
 
-      el('rectangle', { x: '50%', y: '70%', xAnchor: '50%', yAnchor: '50%', width: '55%', height: '2px', fillColor: '#2A1820', time: 3, duration: 12 }),
+      textEl('💕', { y: '74%', fontSize: '80px', time: 3, duration: 12, animations: [{ type: 'scale', time: 'start', duration: 0.5, easing: 'bounce-out' }] }),
+      textEl('Step 3 — Meet Your Match', { y: '82%', fontSize: '42px', fontWeight: '700', color: '#F5EDE8', time: 3.3, duration: 11 }),
 
-      // Step 3
-      txt('💕', '50%', '76%', '80px', '#F5EDE8', { time: 3, duration: 12, animations: [{ time: 'start', duration: 0.5, type: 'scale', easing: 'bounce-out' }] }),
-      txt('Step 3', '50%', '82%', '28px', '#C84B31', { fontWeight: '700', time: 3.2, duration: 11 }),
-      txt('Meet Your Match', '50%', '87%', '44px', '#F5EDE8', { fontWeight: '700', time: 3.4, duration: 11, animations: [{ time: 'start', duration: 0.6, type: 'fade' }] }),
-      txt('Download AankMilaan Today!', '50%', '94%', '34px', '#FFD700', { fontWeight: '700', time: 5, duration: 10, animations: [{ time: 'start', duration: 0.8, type: 'fade' }] }),
+      textEl('Download AankMilaan Today! 🔢', { y: '93%', fontSize: '32px', fontWeight: '700', color: '#FFD700', time: 5, duration: 10, animations: [{ type: 'fade', time: 'start', duration: 0.8 }] }),
     ]
   }
 }
@@ -98,42 +112,22 @@ function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleW
   const color = colors[lifePathNumber] || '#FFD700'
 
   return {
-    outputFormat: 'mp4',
-    width: 1080,
-    height: 1920,
-    duration: 12,
-    frameRate: 30,
-    fillColor: '#0D0A0B',
+    ...baseSource(12),
     elements: [
-      el('rectangle', { width: '100%', height: '100%', x: '0%', y: '0%', xAnchor: '0%', yAnchor: '0%', fillColor: '#1A0810' }),
-      txt('🔢 AankMilaan', '50%', '5%', '52px', '#C84B31', { fontFamily: 'Playfair Display', fontWeight: '700' }),
-      txt('Life Path Number', '50%', '11%', '36px', '#8A7070'),
-      el('rectangle', { x: '50%', y: '15%', xAnchor: '50%', yAnchor: '50%', width: '60%', height: '3px', fillColor: '#3A2830', time: 0, duration: 12 }),
+      rectEl({ color: '#1A0810', duration: 12 }),
+      textEl('🔢 AankMilaan', { y: '5%', fontSize: '52px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
+      textEl('Life Path Number', { y: '11%', fontSize: '36px', color: '#8A7070' }),
 
-      txt(`${lifePathNumber}`, '50%', '32%', '260px', color, {
-        fontFamily: 'Playfair Display', fontWeight: '700', time: 0.8, duration: 11,
-        animations: [{ time: 'start', duration: 0.8, type: 'scale', easing: 'bounce-out' }]
-      }),
+      textEl(String(lifePathNumber), { y: '31%', fontSize: '250px', fontWeight: '700', color, fontFamily: 'Playfair Display', time: 0.8, duration: 11, animations: [{ type: 'scale', time: 'start', duration: 0.8, easing: 'bounce-out' }] }),
 
-      txt('Your Personality', '50%', '50%', '34px', '#E8A87C', { time: 2, duration: 10 }),
-      txt(traits.join('  ·  '), '50%', '56%', '38px', '#F5EDE8', {
-        fontWeight: '700', time: 2.5, duration: 9.5,
-        animations: [{ time: 'start', duration: 0.6, type: 'fade' }]
-      }),
+      textEl('Your Personality', { y: '50%', fontSize: '34px', color: '#E8A87C', time: 2, duration: 10 }),
+      textEl(traits.join(' · '), { y: '56%', fontSize: '36px', fontWeight: '700', color: '#F5EDE8', time: 2.5, duration: 9.5, animations: [{ type: 'fade', time: 'start', duration: 0.6 }] }),
 
-      el('rectangle', { x: '50%', y: '62%', xAnchor: '50%', yAnchor: '50%', width: '60%', height: '3px', fillColor: '#3A2830', time: 3, duration: 9 }),
+      textEl('Most Compatible With', { y: '67%', fontSize: '34px', color: '#E8A87C', time: 3.5, duration: 8.5 }),
+      textEl(compatibleWith.join('   '), { y: '76%', fontSize: '86px', fontWeight: '700', color, fontFamily: 'Playfair Display', time: 4, duration: 8, animations: [{ type: 'scale', time: 'start', duration: 0.8, easing: 'bounce-out' }] }),
 
-      txt('Most Compatible With', '50%', '68%', '34px', '#E8A87C', { time: 3.5, duration: 8.5 }),
-      txt(compatibleWith.join('   '), '50%', '76%', '88px', color, {
-        fontFamily: 'Playfair Display', fontWeight: '700', time: 4, duration: 8,
-        animations: [{ time: 'start', duration: 0.8, type: 'scale', easing: 'bounce-out' }]
-      }),
-
-      txt('Find your match on AankMilaan 💕', '50%', '87%', '34px', '#FFD700', {
-        fontWeight: '700', time: 5, duration: 7,
-        animations: [{ time: 'start', duration: 0.8, type: 'fade' }]
-      }),
-      txt('ankmilaan.com', '50%', '93%', '28px', '#8A7070', { time: 5.5, duration: 6.5 }),
+      textEl('Find your match on AankMilaan 💕', { y: '87%', fontSize: '32px', fontWeight: '700', color: '#FFD700', time: 5, duration: 7, animations: [{ type: 'fade', time: 'start', duration: 0.8 }] }),
+      textEl('ankmilaan.com', { y: '93%', fontSize: '26px', color: '#8A7070', time: 5.5, duration: 6.5 }),
     ]
   }
 }
@@ -141,48 +135,26 @@ function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleW
 function buildMatchReveal({ name1 = 'Priya', name2 = 'Arjun', lifePathNumber1 = 3, lifePathNumber2 = 6, compatibilityScore = 87, city = 'Mumbai' }) {
   const scoreColor = compatibilityScore >= 75 ? '#4CAF50' : compatibilityScore >= 60 ? '#FFD700' : '#C84B31'
   return {
-    outputFormat: 'mp4',
-    width: 1080,
-    height: 1920,
-    duration: 12,
-    frameRate: 30,
-    fillColor: '#0D0A0B',
+    ...baseSource(12),
     elements: [
-      el('rectangle', { width: '100%', height: '100%', x: '0%', y: '0%', xAnchor: '0%', yAnchor: '0%', fillColor: '#1A0810' }),
-      txt('🔢 AankMilaan', '50%', '6%', '52px', '#C84B31', { fontFamily: 'Playfair Display', fontWeight: '700' }),
-      txt('Numerology Match Reveal ✨', '50%', '12%', '32px', '#E8A87C'),
-      el('rectangle', { x: '50%', y: '16%', xAnchor: '50%', yAnchor: '50%', width: '65%', height: '3px', fillColor: '#3A2830', time: 0, duration: 12 }),
+      rectEl({ color: '#1A0810', duration: 12 }),
+      textEl('🔢 AankMilaan', { y: '6%', fontSize: '52px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
+      textEl('Numerology Match Reveal ✨', { y: '12%', fontSize: '30px', color: '#E8A87C' }),
 
-      txt(name1, '25%', '27%', '54px', '#F5EDE8', {
-        fontWeight: '700', width: '44%', time: 1, duration: 11,
-        animations: [{ time: 'start', duration: 0.8, type: 'slide', direction: '270deg', easing: 'quadratic-out' }]
-      }),
-      txt(`Life Path ${lifePathNumber1}`, '25%', '34%', '32px', '#C84B31', { width: '44%', time: 1.2, duration: 10.8 }),
+      textEl(name1, { x: '25%', y: '27%', width: '44%', fontSize: '52px', fontWeight: '700', color: '#F5EDE8', time: 1, duration: 11, animations: [{ type: 'slide', time: 'start', duration: 0.8, direction: '270deg', easing: 'quadratic-out' }] }),
+      textEl(`Life Path ${lifePathNumber1}`, { x: '25%', y: '34%', width: '44%', fontSize: '30px', color: '#C84B31', time: 1.2, duration: 10.8 }),
 
-      txt('💕', '50%', '30%', '70px', '#F5EDE8', {
-        time: 1.8, duration: 10.2,
-        animations: [{ time: 'start', duration: 0.5, type: 'scale', easing: 'bounce-out' }]
-      }),
+      textEl('💕', { y: '30%', fontSize: '68px', time: 1.8, duration: 10.2, animations: [{ type: 'scale', time: 'start', duration: 0.5, easing: 'bounce-out' }] }),
 
-      txt(name2, '75%', '27%', '54px', '#F5EDE8', {
-        fontWeight: '700', width: '44%', time: 1, duration: 11,
-        animations: [{ time: 'start', duration: 0.8, type: 'slide', direction: '90deg', easing: 'quadratic-out' }]
-      }),
-      txt(`Life Path ${lifePathNumber2}`, '75%', '34%', '32px', '#C84B31', { width: '44%', time: 1.2, duration: 10.8 }),
+      textEl(name2, { x: '75%', y: '27%', width: '44%', fontSize: '52px', fontWeight: '700', color: '#F5EDE8', time: 1, duration: 11, animations: [{ type: 'slide', time: 'start', duration: 0.8, direction: '90deg', easing: 'quadratic-out' }] }),
+      textEl(`Life Path ${lifePathNumber2}`, { x: '75%', y: '34%', width: '44%', fontSize: '30px', color: '#C84B31', time: 1.2, duration: 10.8 }),
 
-      txt('Compatibility Score', '50%', '51%', '32px', '#8A7070', { time: 3, duration: 9, animations: [{ time: 'start', duration: 0.6, type: 'fade' }] }),
-      txt(`${compatibilityScore}%`, '50%', '63%', '176px', scoreColor, {
-        fontFamily: 'Playfair Display', fontWeight: '700', time: 3.5, duration: 8.5,
-        animations: [{ time: 'start', duration: 0.8, type: 'scale', easing: 'bounce-out' }]
-      }),
+      textEl('Compatibility Score', { y: '51%', fontSize: '32px', color: '#8A7070', time: 3, duration: 9, animations: [{ type: 'fade', time: 'start', duration: 0.6 }] }),
+      textEl(`${compatibilityScore}%`, { y: '63%', fontSize: '170px', fontWeight: '700', color: scoreColor, fontFamily: 'Playfair Display', time: 3.5, duration: 8.5, animations: [{ type: 'scale', time: 'start', duration: 0.8, easing: 'bounce-out' }] }),
 
-      txt(`📍 ${city}`, '50%', '76%', '30px', '#8A7070', { time: 4, duration: 8 }),
-      el('rectangle', { x: '50%', y: '81%', xAnchor: '50%', yAnchor: '50%', width: '60%', height: '3px', fillColor: '#3A2830', time: 4, duration: 8 }),
-      txt('Find YOUR match on AankMilaan 🔢', '50%', '88%', '34px', '#E8A87C', {
-        fontWeight: '700', time: 5, duration: 7,
-        animations: [{ time: 'start', duration: 0.8, type: 'fade' }]
-      }),
-      txt('ankmilaan.com', '50%', '93%', '28px', '#8A7070', { time: 5.5, duration: 6.5 }),
+      textEl(`📍 ${city}`, { y: '76%', fontSize: '30px', color: '#8A7070', time: 4, duration: 8 }),
+      textEl('Find YOUR match on AankMilaan 🔢', { y: '87%', fontSize: '32px', fontWeight: '700', color: '#E8A87C', time: 5, duration: 7, animations: [{ type: 'fade', time: 'start', duration: 0.8 }] }),
+      textEl('ankmilaan.com', { y: '93%', fontSize: '26px', color: '#8A7070', time: 5.5, duration: 6.5 }),
     ]
   }
 }

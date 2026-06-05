@@ -9,5 +9,15 @@ export async function GET(request) {
     headers: { 'Authorization': `Bearer ${process.env.CREATOMATE_API_KEY}` }
   })
   const data = await res.json()
-  return NextResponse.json({ status: data.status, url: data.url || null, progress: data.progress || 0 })
+
+  // Return everything for debugging
+  return NextResponse.json({
+    status: data.status,
+    url: data.url || null,
+    progress: data.progress || 0,
+    error: data.error || null,
+    errorMessage: data.error_message || data.errorMessage || null,
+    snapshot: data.snapshot_url || data.snapshotUrl || null,
+    raw: data
+  })
 }
