@@ -91,7 +91,7 @@ export default function ReelsTab() {
         return
       }
 
-      setReelStates(prev => ({ ...prev, [id]: { status: 'rendering', renderId: result.renderId, progress: 10, hasVoiceover: result.hasVoiceover } }))
+      setReelStates(prev => ({ ...prev, [id]: { status: 'rendering', renderId: result.renderId, progress: 10, hasVoiceover: result.hasVoiceover, aiCaption: result.caption } }))
       pollStatus(id, result.renderId)
     } catch (e) {
       setReelStates(prev => ({ ...prev, [id]: { status: 'error', error: e.message } }))
@@ -138,7 +138,7 @@ export default function ReelsTab() {
       const res = await fetch('/api/instagram/post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: state.url, caption: template.caption, mediaType: 'REELS' })
+        body: JSON.stringify({ imageUrl: state.url, caption: state.aiCaption || template.caption, mediaType: 'REELS' })
       })
       const data = await res.json()
       setPostResults(prev => ({ ...prev, [template.id]: data.success ? '✅ Posted to Instagram!' : `❌ ${data.error}` }))
@@ -235,11 +235,13 @@ export default function ReelsTab() {
 
                 {/* Caption */}
                 <div>
-                  <div style={{ fontSize: 11, color: BRAND.colors.muted, marginBottom: 6 }}>📝 Instagram Caption:</div>
-                  <div style={{ background: BRAND.colors.surface, borderRadius: 8, padding: '10px 14px', fontSize: 11, color: BRAND.colors.muted, lineHeight: 1.6, maxHeight: 80, overflow: 'hidden', borderLeft: `3px solid ${template.color}` }}>
-                    {template.caption.slice(0, 140)}...
+                  <div style={{ fontSize: 11, color: BRAND.colors.muted, marginBottom: 6 }}>
+                    📝 Instagram Caption: {state?.aiCaption ? <span style={{ color: '#4CAF50', fontWeight: 600 }}>✨ AI Generated</span> : <span style={{ color: BRAND.colors.muted }}>Template</span>}
                   </div>
-                  <button onClick={() => copyCaption(template.id, template.caption)}
+                  <div style={{ background: BRAND.colors.surface, borderRadius: 8, padding: '10px 14px', fontSize: 11, color: BRAND.colors.text, lineHeight: 1.7, maxHeight: 120, overflow: 'auto', borderLeft: `3px solid ${template.color}` }}>
+                    {(state?.aiCaption || template.caption).slice(0, 200)}...
+                  </div>
+                  <button onClick={() => copyCaption(template.id, state?.aiCaption || template.caption)}
                     style={{ marginTop: 6, background: 'transparent', border: 'none', fontSize: 11, color: copiedCaption === template.id ? '#4CAF50' : BRAND.colors.secondary, cursor: 'pointer', padding: 0, fontFamily: "'Nunito', sans-serif" }}>
                     {copiedCaption === template.id ? '✅ Copied!' : '📋 Copy full caption'}
                   </button>

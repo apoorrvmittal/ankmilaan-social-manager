@@ -65,6 +65,63 @@ async function generateVoiceover(text) {
   }
 }
 
+
+async function generateCaption(reelType, data) {
+  try {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) return null
+
+    let prompt = ''
+    if (reelType === 'how_it_works') {
+      prompt = `Write a high-engagement Instagram caption for a Reel about AankMilaan, a numerology-based matrimony app. The reel shows how the app works in 3 steps. 
+      Make it curiosity-driven, spiritual yet modern, targeting unmarried Indians aged 22-35.
+      Include: hook line, 2-3 sentences, strong CTA, 8-10 relevant hashtags.
+      Tone: warm, aspirational, slightly mystical. Max 200 words.`
+    } else if (reelType === 'numerology_explainer') {
+      const num = data?.lifePathNumber || 3
+      const traits = data?.traits?.join(', ') || 'creative, expressive, joyful'
+      const compatible = data?.compatibleWith?.join(', ') || '1, 3, 5, 9'
+      prompt = `Write a high-engagement Instagram caption for a Reel about Life Path Number ${num} in Chaldean Numerology.
+      Key facts: Traits are ${traits}. Most compatible with numbers ${compatible}.
+      Hook people with their birth date revealing personality. Ask them to comment their own number.
+      Include: strong hook, personality description, compatible numbers, CTA to comment, 8-10 hashtags.
+      Tone: mystical, fun, shareable. Max 200 words.`
+    } else {
+      const name1 = data?.name1 || 'Priya'
+      const name2 = data?.name2 || 'Arjun'  
+      const score = data?.compatibilityScore || 87
+      const lp1 = data?.lifePathNumber1 || 3
+      const lp2 = data?.lifePathNumber2 || 6
+      prompt = `Write a high-engagement Instagram caption for a numerology match reveal Reel.
+      The match: Life Path ${lp1} meets Life Path ${lp2}. Compatibility score: ${score}%.
+      This is for AankMilaan, India's numerology matrimony app.
+      Make it emotional, shareable, and drive people to check their own compatibility.
+      Include: emotional hook, brief explanation of why these numbers work, CTA to try AankMilaan, 8-10 hashtags.
+      ${score >= 75 ? 'Score is high — celebrate the match!' : 'Score shows growth potential — spin it positively.'}
+      Tone: romantic, mystical, aspirational. Max 200 words.`
+    }
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    const result = await res.json()
+    return result.content?.[0]?.text || null
+  } catch (e) {
+    console.error('Caption generation failed:', e.message)
+    return null
+  }
+}
+
 export async function POST(request) {
   try {
     const { reelType, data } = await request.json()
@@ -91,6 +148,13 @@ export async function POST(request) {
     const voiceoverUrl = await generateVoiceover(script)
     console.log('Voiceover URL:', voiceoverUrl || 'none (music only)')
 
+    // Generate AI caption in parallel with voiceover
+    const [voiceoverUrl, caption] = await Promise.all([
+      generateVoiceover(script),
+      generateCaption(reelType, data)
+    ])
+    console.log('Caption generated:', !!caption)
+
     let source
     if (reelType === 'how_it_works') source = buildHowItWorksReel(voiceoverUrl)
     else if (reelType === 'numerology_explainer') source = buildNumerologyExplainer(data, voiceoverUrl)
@@ -116,6 +180,7 @@ export async function POST(request) {
       status: mp4Render.status,
       url: mp4Render.url || null,
       hasVoiceover: !!voiceoverUrl,
+      caption,
       allRenders: renders.map(r => ({ id: r.id, format: r.output_format, status: r.status }))
     })
 
@@ -220,3 +285,6 @@ function buildMatchReveal({ name1='Priya', name2='Arjun', lifePathNumber1=3, lif
     txt('ankmilaan.com', '93%', { fontSize: '26px', color: '#8A7070', time: 5.5, duration: 6.5 }),
   ]}
 }
+
+// This is appended - we need to add caption generation to the POST handler
+// Let's rewrite the POST handler only
