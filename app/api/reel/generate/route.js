@@ -19,17 +19,28 @@ export async function POST(request) {
     })
 
     const result = await res.json()
+    console.log('Creatomate full response:', JSON.stringify(result))
+
     if (!res.ok) return NextResponse.json({ error: JSON.stringify(result) }, { status: 400 })
 
-    // Result can be array - find the mp4 render (not the snapshot jpg)
-    const renders = Array.isArray(result) ? result : [result]
-    const mp4Render = renders.find(r => r.output_format === 'mp4') || renders[0]
+    // Creatomate returns a single render object (not array) when using source directly
+    // If it's an array, find the mp4 one
+    let render
+    if (Array.isArray(result)) {
+      render = result.find(r => r.output_format === 'mp4') || result.find(r => r.output_format !== 'jpg') || result[0]
+    } else {
+      render = result
+    }
+
+    console.log('Selected render:', render.id, render.output_format)
 
     return NextResponse.json({ 
-      renderId: mp4Render.id, 
-      status: mp4Render.status, 
-      url: mp4Render.url || null,
-      allRenderIds: renders.map(r => ({ id: r.id, format: r.output_format }))
+      renderId: render.id, 
+      status: render.status, 
+      url: render.url || null,
+      outputFormat: render.output_format,
+      // Return ALL render IDs for debugging
+      allRenders: Array.isArray(result) ? result.map(r => ({ id: r.id, format: r.output_format, status: r.status })) : [{ id: render.id, format: render.output_format }]
     })
 
   } catch (error) {
