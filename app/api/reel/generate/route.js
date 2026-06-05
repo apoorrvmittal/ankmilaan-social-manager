@@ -145,10 +145,7 @@ export async function POST(request) {
     }
 
     // Generate voiceover (non-blocking — reel works without it)
-    const voiceoverUrl = await generateVoiceover(script)
-    console.log('Voiceover URL:', voiceoverUrl || 'none (music only)')
-
-    // Generate AI caption in parallel with voiceover
+    // Generate AI caption + voiceover in parallel
     const [voiceoverUrl, caption] = await Promise.all([
       generateVoiceover(script),
       generateCaption(reelType, data)
