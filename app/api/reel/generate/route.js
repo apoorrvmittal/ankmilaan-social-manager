@@ -1,13 +1,76 @@
 import { NextResponse } from 'next/server'
 
+// Royalty-free music from Pixabay (used in Creatomate's own examples)
+const MUSIC_URL = 'https://creatomate-static.s3.amazonaws.com/demo/pixabay-best-summer-128473.mp3'
+const MUSIC_SPIRITUAL = 'https://creatomate-static.s3.amazonaws.com/demo/pixabay-dreams-ambient-music-116",954.mp3'
+
+// Voiceover scripts per reel type
+const VOICEOVER_SCRIPTS = {
+  how_it_works: `Welcome to AankMilaan — the world's first numerology-based matrimony app. 
+    Step 1: Enter your name and date of birth. 
+    Step 2: Our Chaldean numerology engine calculates your Life Path number. 
+    Step 3: We find your most compatible matches. 
+    Download AankMilaan today and let the numbers guide you to your soulmate.`,
+
+  numerology_explainer: (num, traits, compatible) =>
+    `Life Path Number ${num}. 
+    If your Life Path is ${num}, you are ${traits.join(', ')}. 
+    You are most compatible with Life Path numbers ${compatible.join(', ')}. 
+    Find your numerology match on AankMilaan — link in bio.`,
+
+  match_reveal: (name1, name2, score, lp1, lp2) =>
+    `${name1} is Life Path ${lp1}. ${name2} is Life Path ${lp2}. 
+    Their Chaldean numerology compatibility score is ${score} percent! 
+    Numbers don't lie — find your perfect match on AankMilaan.`,
+}
+
+async function generateVoiceover(text) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://smm.ankmilaan.com'
+    const res = await fetch(`${baseUrl}/api/audio/voiceover`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() })
+    })
+    const data = await res.json()
+    return data.url || null
+  } catch (e) {
+    console.error('Voiceover failed:', e.message)
+    return null
+  }
+}
+
 export async function POST(request) {
   try {
     const { reelType, data } = await request.json()
 
+    // Generate voiceover script
+    let voiceScript = ''
+    if (reelType === 'how_it_works') {
+      voiceScript = VOICEOVER_SCRIPTS.how_it_works
+    } else if (reelType === 'numerology_explainer') {
+      voiceScript = VOICEOVER_SCRIPTS.numerology_explainer(
+        data?.lifePathNumber || 3,
+        data?.traits || ['creative', 'expressive', 'joyful'],
+        data?.compatibleWith || [1, 3, 5, 9]
+      )
+    } else {
+      voiceScript = VOICEOVER_SCRIPTS.match_reveal(
+        data?.name1 || 'Priya', data?.name2 || 'Arjun',
+        data?.compatibilityScore || 87,
+        data?.lifePathNumber1 || 3, data?.lifePathNumber2 || 6
+      )
+    }
+
+    // Generate voiceover audio
+    const voiceoverUrl = await generateVoiceover(voiceScript)
+    console.log('Voiceover URL:', voiceoverUrl)
+
+    // Build video source with audio
     let source
-    if (reelType === 'how_it_works') source = buildHowItWorksReel()
-    else if (reelType === 'numerology_explainer') source = buildNumerologyExplainer(data)
-    else source = buildMatchReveal(data)
+    if (reelType === 'how_it_works') source = buildHowItWorksReel(voiceoverUrl)
+    else if (reelType === 'numerology_explainer') source = buildNumerologyExplainer(data, voiceoverUrl)
+    else source = buildMatchReveal(data, voiceoverUrl)
 
     const res = await fetch('https://api.creatomate.com/v1/renders', {
       method: 'POST',
@@ -21,7 +84,6 @@ export async function POST(request) {
     const result = await res.json()
     if (!res.ok) return NextResponse.json({ error: JSON.stringify(result) }, { status: 400 })
 
-    // SDK shows POST returns Render[] array
     const renders = Array.isArray(result) ? result : [result]
     const mp4Render = renders.find(r => r.output_format === 'mp4') || renders[0]
 
@@ -29,6 +91,7 @@ export async function POST(request) {
       renderId: mp4Render.id,
       status: mp4Render.status,
       url: mp4Render.url || null,
+      voiceoverUrl,
       allRenders: renders.map(r => ({ id: r.id, format: r.output_format, status: r.status }))
     })
 
@@ -37,7 +100,33 @@ export async function POST(request) {
   }
 }
 
-// REST API uses snake_case keys!
+function audioElements(voiceoverUrl) {
+  const elements = [
+    // Background music (low volume)
+    {
+      type: 'audio',
+      source: MUSIC_URL,
+      time: 0,
+      duration: null,
+      audio_fade_in: 1,
+      audio_fade_out: 2,
+      volume: '30%',
+    }
+  ]
+  // Add voiceover if available and not base64
+  if (voiceoverUrl && !voiceoverUrl.startsWith('data:')) {
+    elements.push({
+      type: 'audio',
+      source: voiceoverUrl,
+      time: 0.5,
+      volume: '100%',
+      audio_fade_in: 0.3,
+      audio_fade_out: 0.5,
+    })
+  }
+  return elements
+}
+
 function rect(fill_color, opts = {}) {
   return {
     type: 'shape',
@@ -76,7 +165,7 @@ function txt(text, y, opts = {}) {
   return el
 }
 
-function buildHowItWorksReel() {
+function buildHowItWorksReel(voiceoverUrl) {
   return {
     output_format: 'mp4',
     width: 1080,
@@ -85,6 +174,7 @@ function buildHowItWorksReel() {
     frame_rate: 30,
     emoji_style: 'apple',
     elements: [
+      ...audioElements(voiceoverUrl),
       rect('#1A0810', { duration: 15 }),
       txt('🔢 AankMilaan', '6%', { fontSize: '58px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
       txt('How It Works', '12%', { fontSize: '38px', color: '#E8A87C' }),
@@ -104,7 +194,7 @@ function buildHowItWorksReel() {
   }
 }
 
-function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleWith = [] }) {
+function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleWith = [] }, voiceoverUrl) {
   const colors = { 1:'#FF6B6B',2:'#4ECDC4',3:'#FFD700',4:'#95A5A6',5:'#E8A87C',6:'#C84B31',7:'#9C6FDE',8:'#2ECC71',9:'#E74C3C' }
   const color = colors[lifePathNumber] || '#FFD700'
   return {
@@ -115,6 +205,7 @@ function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleW
     frame_rate: 30,
     emoji_style: 'apple',
     elements: [
+      ...audioElements(voiceoverUrl),
       rect('#1A0810', { duration: 12 }),
       txt('🔢 AankMilaan', '5%', { fontSize: '52px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
       txt('Life Path Number', '11%', { fontSize: '36px', color: '#8A7070' }),
@@ -131,7 +222,7 @@ function buildNumerologyExplainer({ lifePathNumber = 3, traits = [], compatibleW
   }
 }
 
-function buildMatchReveal({ name1='Priya', name2='Arjun', lifePathNumber1=3, lifePathNumber2=6, compatibilityScore=87, city='Mumbai' }) {
+function buildMatchReveal({ name1='Priya', name2='Arjun', lifePathNumber1=3, lifePathNumber2=6, compatibilityScore=87, city='Mumbai' }, voiceoverUrl) {
   const scoreColor = compatibilityScore >= 75 ? '#4CAF50' : compatibilityScore >= 60 ? '#FFD700' : '#C84B31'
   return {
     output_format: 'mp4',
@@ -141,6 +232,7 @@ function buildMatchReveal({ name1='Priya', name2='Arjun', lifePathNumber1=3, lif
     frame_rate: 30,
     emoji_style: 'apple',
     elements: [
+      ...audioElements(voiceoverUrl),
       rect('#1A0810', { duration: 12 }),
       txt('🔢 AankMilaan', '6%', { fontSize: '52px', fontWeight: '700', color: '#C84B31', fontFamily: 'Playfair Display' }),
       txt('Numerology Match Reveal ✨', '12%', { fontSize: '30px', color: '#E8A87C' }),
