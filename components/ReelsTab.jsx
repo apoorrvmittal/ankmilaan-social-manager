@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 const BRAND = {
   colors: {
@@ -8,346 +8,279 @@ const BRAND = {
   },
 };
 
-// Chaldean numerology calculation
-function chaldeanNumber(name) {
-  const map = { a:1,i:1,j:1,q:1,y:1, b:2,k:2,r:2, c:3,g:3,l:3,s:3, d:4,m:4,t:4, e:5,h:5,n:5,x:5, u:6,v:6,w:6, o:7,z:7, f:8,p:8 }
-  const sum = name.toLowerCase().split('').reduce((acc, c) => acc + (map[c] || 0), 0)
-  if (sum < 10) return sum
-  const reduced = Math.floor(sum/10) + (sum%10)
-  return reduced < 10 ? reduced : Math.floor(reduced/10) + (reduced%10)
+const NUMEROLOGY = {
+  1: { traits: ['Leadership', 'Independent', 'Ambitious'], compatible: [3, 5, 6, 9] },
+  2: { traits: ['Harmony', 'Sensitive', 'Diplomatic'], compatible: [2, 4, 6, 8] },
+  3: { traits: ['Creative', 'Expressive', 'Joyful'], compatible: [1, 3, 5, 9] },
+  4: { traits: ['Stable', 'Hardworking', 'Loyal'], compatible: [2, 4, 6, 8] },
+  5: { traits: ['Adventurous', 'Freedom-loving', 'Versatile'], compatible: [1, 3, 5, 9] },
+  6: { traits: ['Nurturing', 'Responsible', 'Loving'], compatible: [1, 2, 4, 6, 9] },
+  7: { traits: ['Spiritual', 'Analytical', 'Wise'], compatible: [2, 7] },
+  8: { traits: ['Powerful', 'Ambitious', 'Successful'], compatible: [2, 4, 8] },
+  9: { traits: ['Compassionate', 'Idealistic', 'Generous'], compatible: [1, 3, 5, 6, 9] },
 }
 
-function lifePathNumber(dob) {
-  if (!dob) return 1
-  const digits = dob.replace(/-/g,'').split('').map(Number)
-  let sum = digits.reduce((a,b) => a+b, 0)
-  while (sum > 9 && sum !== 11 && sum !== 22) {
-    sum = String(sum).split('').map(Number).reduce((a,b)=>a+b,0)
-  }
-  return sum
-}
-
-function compatibilityScore(n1, n2) {
-  const compatible = {
-    1:[1,3,5,6,9], 2:[2,4,6,8], 3:[1,3,5,9], 4:[2,4,6,8],
-    5:[1,3,5,6,9], 6:[1,2,4,5,6,9], 7:[2,7], 8:[2,4,8], 9:[1,3,5,6,9]
-  }
-  const base = compatible[n1]?.includes(n2) ? 75 : 45
-  const bonus = n1 === n2 ? 10 : Math.abs(n1-n2) <= 2 ? 5 : 0
-  return Math.min(99, base + bonus + Math.floor(Math.random()*10))
-}
-
-const DUMMY_MATCHES = [
-  { id:1, name1:"Priya Sharma", name2:"Arjun Mehta", dob1:"1995-03-15", dob2:"1993-07-22", city:"Mumbai" },
-  { id:2, name1:"Neha Gupta", name2:"Rahul Singh", dob1:"1997-11-08", dob2:"1994-05-14", city:"Delhi" },
-  { id:3, name1:"Anjali Verma", name2:"Karan Patel", dob1:"1996-06-30", dob2:"1992-09-03", city:"Pune" },
-  { id:4, name1:"Pooja Jain", name2:"Vikram Nair", dob1:"1998-02-19", dob2:"1995-12-27", city:"Bangalore" },
+const REEL_TEMPLATES = [
+  {
+    id: 'how_it_works',
+    icon: '📱',
+    title: 'How AankMilaan Works',
+    desc: 'Show the 3-step process of the app — enter details, get numerology score, find match',
+    caption: '✨ Finding your soulmate is now as simple as 1-2-3! AankMilaan uses the ancient wisdom of Chaldean Numerology to match you with your perfect partner 🔢💕\n\nStep 1: Enter your details\nStep 2: We calculate your Life Path number\nStep 3: Meet your compatible matches!\n\n#AankMilaan #NumerologyLove #MatrimonyApp #Shaadi #NumerologyMatch #LifePath #ChaldeanNumerology',
+    color: '#C84B31',
+  },
+  {
+    id: 'numerology_explainer',
+    icon: '🔢',
+    title: 'Life Path Number Explainer',
+    desc: 'Educational reel — what each Life Path number means and who they match with',
+    caption: '🔢 Did you know your birth date reveals your perfect match? Each Life Path number has unique traits and compatible partners according to Chaldean Numerology!\n\nWhich number are you? Comment below 👇\n\n#NumerologyFacts #LifePathNumber #ChaldeanNumerology #AankMilaan #NumerologyLove #Shaadi #SpiritualLove',
+    color: '#FFD700',
+    hasNumberPicker: true,
+  },
+  {
+    id: 'match_reveal',
+    icon: '💕',
+    title: 'Couple Match Reveal',
+    desc: 'Reveal the compatibility score between two people using their Life Path numbers',
+    caption: '💕 Numbers never lie! Here\'s what the stars and digits say about this match 🔢✨\n\nFind your own compatibility score on AankMilaan — link in bio!\n\n#AankMilaan #NumerologyMatch #Compatibility #Shaadi #NumerologyLove #MatrimonyApp #ChaldeanNumerology',
+    color: '#9C6FDE',
+    hasMatchForm: true,
+  },
 ]
 
-export default function ReelsTab() {
-  const [matches, setMatches] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedMatch, setSelectedMatch] = useState(null)
-  const [reelStatus, setReelStatus] = useState({}) // { matchId: { status, url, renderId, progress } }
-  const [posting, setPosting] = useState(null)
-  const [postResult, setPostResult] = useState({})
-  const [creatomateKey, setCreatomateKey] = useState("")
-  const [templateId, setTemplateId] = useState("")
-  const [showSetup, setShowSetup] = useState(false)
-
-  useEffect(() => {
-    fetchMatches()
-  }, [])
-
-  const fetchMatches = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch("/api/supabase/matches")
-      const data = await res.json()
-      if (data.data?.length > 0) {
-        if (data.source === 'matches') {
-          setMatches(data.data)
-        } else if (data.source === 'profiles') {
-          // Pair profiles into matches
-          const profiles = data.data
-          const paired = []
-          for (let i = 0; i < profiles.length - 1; i += 2) {
-            paired.push({ 
-              id: i, 
-              name1: profiles[i].full_name || "User " + (i+1),
-              name2: profiles[i+1].full_name || "User " + (i+2),
-              dob1: profiles[i].date_of_birth,
-              dob2: profiles[i+1].date_of_birth,
-              city: profiles[i].city || "India",
-              life_path_1: profiles[i].life_path_number,
-              life_path_2: profiles[i+1].life_path_number,
-            })
-          }
-          setMatches(paired.length > 0 ? paired : DUMMY_MATCHES)
-        }
-      } else {
-        setMatches(DUMMY_MATCHES)
-      }
-    } catch (e) {
-      setMatches(DUMMY_MATCHES)
-    }
-    setLoading(false)
+function StatusBadge({ status, progress }) {
+  if (!status) return null
+  const configs = {
+    generating: { color: '#FFD700', label: '⏳ Sending to Creatomate...' },
+    rendering: { color: '#E8A87C', label: `🎬 Rendering ${progress || 0}%` },
+    succeeded: { color: '#4CAF50', label: '✅ Ready to Post!' },
+    failed: { color: '#f44336', label: '❌ Render Failed' },
+    error: { color: '#f44336', label: '❌ Error' },
   }
+  const c = configs[status]
+  if (!c) return null
+  return (
+    <span style={{ background: `${c.color}22`, color: c.color, borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
+      {c.label}
+    </span>
+  )
+}
 
-  const generateReel = async (match) => {
-    const lp1 = match.life_path_1 || lifePathNumber(match.dob1 || "1995-01-01")
-    const lp2 = match.life_path_2 || lifePathNumber(match.dob2 || "1993-01-01")
-    const score = match.compatibility_score || compatibilityScore(lp1, lp2)
+export default function ReelsTab() {
+  const [reelStates, setReelStates] = useState({})
+  const [posting, setPosting] = useState(null)
+  const [postResults, setPostResults] = useState({})
+  const [selectedNumber, setSelectedNumber] = useState(3)
+  const [matchForm, setMatchForm] = useState({ name1: 'Priya', name2: 'Arjun', lp1: 3, lp2: 6, score: 87, city: 'Mumbai' })
+  const [copiedCaption, setCopiedCaption] = useState(null)
 
-    setReelStatus(prev => ({ ...prev, [match.id]: { status: "generating", progress: 0 } }))
+  const generateReel = async (template) => {
+    const id = template.id
+    setReelStates(prev => ({ ...prev, [id]: { status: 'generating', progress: 0 } }))
+
+    let data = {}
+    if (id === 'numerology_explainer') {
+      const num = selectedNumber
+      data = { lifePathNumber: num, traits: NUMEROLOGY[num].traits, compatibleWith: NUMEROLOGY[num].compatible }
+    } else if (id === 'match_reveal') {
+      data = { name1: matchForm.name1, name2: matchForm.name2, lifePathNumber1: matchForm.lp1, lifePathNumber2: matchForm.lp2, compatibilityScore: matchForm.score, city: matchForm.city }
+    }
 
     try {
-      const res = await fetch("/api/reel/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name1: match.name1,
-          name2: match.name2,
-          lifePathNumber1: lp1,
-          lifePathNumber2: lp2,
-          compatibilityScore: score,
-          city: match.city || "India"
-        })
+      const res = await fetch('/api/reel/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reelType: id, data })
       })
-      const data = await res.json()
+      const result = await res.json()
 
-      if (data.error) {
-        setReelStatus(prev => ({ ...prev, [match.id]: { status: "error", error: data.error } }))
+      if (result.error) {
+        setReelStates(prev => ({ ...prev, [id]: { status: 'error', error: result.error } }))
         return
       }
 
-      setReelStatus(prev => ({ ...prev, [match.id]: { status: "rendering", renderId: data.renderId, progress: 10 } }))
-      pollStatus(match.id, data.renderId)
+      setReelStates(prev => ({ ...prev, [id]: { status: 'rendering', renderId: result.renderId, progress: 10 } }))
+      pollStatus(id, result.renderId)
     } catch (e) {
-      setReelStatus(prev => ({ ...prev, [match.id]: { status: "error", error: e.message } }))
+      setReelStates(prev => ({ ...prev, [id]: { status: 'error', error: e.message } }))
     }
   }
 
-  const pollStatus = async (matchId, renderId) => {
+  const pollStatus = (id, renderId) => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/reel/status?id=${renderId}`)
         const data = await res.json()
-        setReelStatus(prev => ({ ...prev, [matchId]: { ...prev[matchId], status: data.status, url: data.url, progress: data.progress } }))
-        if (data.status === "succeeded" || data.status === "failed") {
-          clearInterval(interval)
-        }
+        setReelStates(prev => ({ ...prev, [id]: { ...prev[id], status: data.status, url: data.url, progress: data.progress || prev[id]?.progress } }))
+        if (data.status === 'succeeded' || data.status === 'failed') clearInterval(interval)
       } catch (e) { clearInterval(interval) }
     }, 3000)
   }
 
-  const postReelToInstagram = async (match) => {
-    const reel = reelStatus[match.id]
+  const postToInstagram = async (template) => {
+    const reel = reelStates[template.id]
     if (!reel?.url) return
-    setPosting(match.id)
+    setPosting(template.id)
     try {
-      const lp1 = match.life_path_1 || lifePathNumber(match.dob1 || "1995-01-01")
-      const lp2 = match.life_path_2 || lifePathNumber(match.dob2 || "1993-01-01")
-      const score = match.compatibility_score || compatibilityScore(lp1, lp2)
-
-      const caption = `✨ ${match.name1.split(' ')[0]} & ${match.name2.split(' ')[0]} — matched by Chaldean numerology!\n\n🔢 Life Path ${lp1} meets Life Path ${lp2}\n💯 Compatibility Score: ${score}%\n\nNumbers don't lie 💕 Find your match on AankMilaan!\n\n#AankMilaan #NumerologyLove #${match.city?.replace(' ','')||'India'} #Shaadi #NumerologyMatch #ChaldeanNumerology #MatrimonyApp`
-
-      const res = await fetch("/api/instagram/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: reel.url, caption, mediaType: "REELS" })
+      const res = await fetch('/api/instagram/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: reel.url, caption: template.caption, mediaType: 'REELS' })
       })
       const data = await res.json()
-      setPostResult(prev => ({ ...prev, [match.id]: data.success ? "✅ Posted to Instagram!" : `❌ ${data.error}` }))
+      setPostResults(prev => ({ ...prev, [template.id]: data.success ? '✅ Posted to Instagram!' : `❌ ${data.error}` }))
     } catch (e) {
-      setPostResult(prev => ({ ...prev, [match.id]: "❌ Failed to post" }))
+      setPostResults(prev => ({ ...prev, [template.id]: '❌ Failed to post' }))
     }
     setPosting(null)
   }
 
-
-  const createTemplate = async () => {
-    setShowSetup(true)
-    const res = await fetch("/api/reel/setup", { method: "POST" })
-    const data = await res.json()
-    if (data.templateId) {
-      setTemplateId(data.templateId)
-      alert(`✅ Template created!\n\nTemplate ID: ${data.templateId}\n\nNow add this to Vercel:\nCREATOMATE_TEMPLATE_ID=${data.templateId}`)
-    } else {
-      alert("Error: " + (data.error || "Unknown error"))
-    }
-  }
-
-  const getStatusBadge = (matchId) => {
-    const s = reelStatus[matchId]
-    if (!s) return null
-    const configs = {
-      generating: { color: "#FFD700", label: "⏳ Generating..." },
-      rendering: { color: "#E8A87C", label: `🎬 Rendering ${s.progress||0}%` },
-      succeeded: { color: "#4CAF50", label: "✅ Ready" },
-      failed: { color: "#f44336", label: "❌ Failed" },
-      error: { color: "#f44336", label: `❌ ${s.error?.slice(0,30)}` },
-    }
-    const c = configs[s.status]
-    if (!c) return null
-    return (
-      <span style={{ background: `${c.color}22`, color: c.color, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 600 }}>
-        {c.label}
-      </span>
-    )
+  const copyCaption = (id, caption) => {
+    navigator.clipboard.writeText(caption)
+    setCopiedCaption(id)
+    setTimeout(() => setCopiedCaption(null), 2000)
   }
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4 }}>🎬 Auto Reel Generator</div>
-          <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Generate & post Match Reveal Reels from AankMilaan data</div>
-        </div>
-        <button onClick={() => setShowSetup(!showSetup)}
-          style={{ background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "8px 14px", color: BRAND.colors.secondary, fontSize: 12, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
-          ⚙️ Setup
-        </button>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4 }}>🎬 Auto Reel Generator</div>
+        <div style={{ color: BRAND.colors.muted, fontSize: 13 }}>Create branded Reels showcasing AankMilaan & numerology concepts</div>
       </div>
 
-      {/* Setup Panel */}
-      {showSetup && (
-        <div style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, marginBottom: 14 }}>Creatomate Setup</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 12, color: BRAND.colors.muted, marginBottom: 4 }}>Creatomate API Key</div>
-              <input value={creatomateKey} onChange={e => setCreatomateKey(e.target.value)} placeholder="Get from creatomate.com/dashboard"
-                style={{ width: "100%", background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "10px 14px", color: BRAND.colors.text, fontSize: 13, outline: "none", fontFamily: "'Nunito', sans-serif", boxSizing: "border-box" }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: BRAND.colors.muted, marginBottom: 4 }}>Template ID</div>
-              <input value={templateId} onChange={e => setTemplateId(e.target.value)} placeholder="After creating template on Creatomate"
-                style={{ width: "100%", background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "10px 14px", color: BRAND.colors.text, fontSize: 13, outline: "none", fontFamily: "'Nunito', sans-serif", boxSizing: "border-box" }} />
-            </div>
-            <div style={{ background: BRAND.colors.surface, borderRadius: 8, padding: 12, fontSize: 12, color: BRAND.colors.muted, lineHeight: 1.6 }}>
-              <strong style={{ color: BRAND.colors.secondary }}>Steps to set up Creatomate:</strong><br />
-              1. Sign up at <strong>creatomate.com</strong> (free trial = 10 renders)<br />
-              2. Create a new template → choose "Video" → 9:16 (Reel size)<br />
-              3. Add text elements named exactly: <strong>Name-1, Name-2, Life-Path-1, Life-Path-2, Score, City, Tagline</strong><br />
-              4. Copy the Template ID and API Key → add both to <strong>Vercel env vars</strong>:<br />
-              &nbsp;&nbsp;CREATOMATE_API_KEY and CREATOMATE_TEMPLATE_ID
-            </div>
-            <button onClick={createTemplate}
-              style={{ background: BRAND.colors.primary, border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'Nunito', sans-serif", marginTop: 4 }}>
-              ✨ Auto-Create Template for Me
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* How it works */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto" }}>
-        {["1. Pick a match from Supabase", "2. Click Generate Reel", "3. Creatomate renders video", "4. One click → Post to Instagram"].map((step, i) => (
-          <div key={i} style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 10, padding: "10px 14px", fontSize: 12, color: i < 2 ? BRAND.colors.secondary : BRAND.colors.muted, whiteSpace: "nowrap", borderLeft: `3px solid ${BRAND.colors.primary}` }}>
-            {step}
-          </div>
+      {/* How it works bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, overflowX: 'auto' }}>
+        {['1. Choose reel type', '2. Customize content', '3. Generate video', '4. Post to Instagram'].map((s, i) => (
+          <div key={i} style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 10, padding: '10px 14px', fontSize: 12, color: i < 2 ? BRAND.colors.secondary : BRAND.colors.muted, whiteSpace: 'nowrap', borderLeft: `3px solid ${BRAND.colors.primary}` }}>{s}</div>
         ))}
       </div>
 
-      {/* Match Cards */}
-      {loading ? (
-        <div style={{ color: BRAND.colors.muted, fontSize: 13, padding: 20 }}>Loading matches from Supabase...</div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {matches.map((match) => {
-            const lp1 = match.life_path_1 || lifePathNumber(match.dob1 || "1995-01-01")
-            const lp2 = match.life_path_2 || lifePathNumber(match.dob2 || "1993-01-01")
-            const score = match.compatibility_score || compatibilityScore(lp1, lp2)
-            const reel = reelStatus[match.id]
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {REEL_TEMPLATES.map((template) => {
+          const state = reelStates[template.id]
+          const isRendering = state?.status === 'generating' || state?.status === 'rendering'
+          const isReady = state?.status === 'succeeded'
 
-            return (
-              <div key={match.id} style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 14, padding: 18 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                    {/* Person 1 */}
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${BRAND.colors.primary}, ${BRAND.colors.secondary})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, margin: "0 auto 6px" }}>
-                        {match.name1?.[0] || "?"}
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.colors.text }}>{match.name1?.split(' ')[0]}</div>
-                      <div style={{ fontSize: 11, color: BRAND.colors.muted }}>LP {lp1}</div>
-                    </div>
-
-                    {/* Score */}
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 22, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: score >= 75 ? "#4CAF50" : score >= 60 ? BRAND.colors.accent : BRAND.colors.primary }}>
-                        {score}%
-                      </div>
-                      <div style={{ fontSize: 10, color: BRAND.colors.muted }}>compatibility</div>
-                      {match.city && <div style={{ fontSize: 10, color: BRAND.colors.muted }}>📍 {match.city}</div>}
-                    </div>
-
-                    {/* Person 2 */}
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, #9C6FDE, ${BRAND.colors.secondary})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, margin: "0 auto 6px" }}>
-                        {match.name2?.[0] || "?"}
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.colors.text }}>{match.name2?.split(' ')[0]}</div>
-                      <div style={{ fontSize: 11, color: BRAND.colors.muted }}>LP {lp2}</div>
-                    </div>
+          return (
+            <div key={template.id} style={{ background: BRAND.colors.card, border: `1px solid ${BRAND.colors.border}`, borderRadius: 14, overflow: 'hidden' }}>
+              {/* Header */}
+              <div style={{ padding: '18px 20px', borderBottom: `1px solid ${BRAND.colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 12, background: `${template.color}22`, border: `2px solid ${template.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                    {template.icon}
                   </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
-                    {getStatusBadge(match.id)}
-                    {postResult[match.id] && (
-                      <span style={{ fontSize: 11, color: postResult[match.id].includes("✅") ? "#4CAF50" : "#f44336" }}>
-                        {postResult[match.id]}
-                      </span>
-                    )}
+                  <div>
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 700, color: BRAND.colors.text }}>{template.title}</div>
+                    <div style={{ fontSize: 12, color: BRAND.colors.muted, marginTop: 2 }}>{template.desc}</div>
                   </div>
                 </div>
+                <StatusBadge status={state?.status} progress={state?.progress} />
+              </div>
 
-                {/* Reel preview if ready */}
-                {reel?.status === "succeeded" && reel?.url && (
-                  <div style={{ marginBottom: 12 }}>
-                    <video src={reel.url} controls style={{ width: "100%", borderRadius: 8, maxHeight: 200 }} />
+              <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                {/* Number picker for explainer */}
+                {template.hasNumberPicker && (
+                  <div>
+                    <div style={{ fontSize: 12, color: BRAND.colors.muted, marginBottom: 8 }}>Select Life Path Number to explain:</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {[1,2,3,4,5,6,7,8,9].map(n => (
+                        <button key={n} onClick={() => setSelectedNumber(n)}
+                          style={{ width: 40, height: 40, borderRadius: 10, background: selectedNumber === n ? template.color : BRAND.colors.surface, border: `2px solid ${selectedNumber === n ? template.color : BRAND.colors.border}`, color: selectedNumber === n ? '#fff' : BRAND.colors.muted, fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: "'Playfair Display', serif" }}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                    {NUMEROLOGY[selectedNumber] && (
+                      <div style={{ marginTop: 10, background: BRAND.colors.surface, borderRadius: 8, padding: '10px 14px', fontSize: 12, color: BRAND.colors.muted }}>
+                        <span style={{ color: BRAND.colors.secondary, fontWeight: 700 }}>LP {selectedNumber}: </span>
+                        {NUMEROLOGY[selectedNumber].traits.join(' · ')} · Compatible with {NUMEROLOGY[selectedNumber].compatible.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Match form */}
+                {template.hasMatchForm && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {[
+                      { key: 'name1', label: 'Person 1 Name', placeholder: 'Priya' },
+                      { key: 'name2', label: 'Person 2 Name', placeholder: 'Arjun' },
+                      { key: 'lp1', label: 'Life Path 1', placeholder: '3', type: 'number' },
+                      { key: 'lp2', label: 'Life Path 2', placeholder: '6', type: 'number' },
+                      { key: 'score', label: 'Compatibility %', placeholder: '87', type: 'number' },
+                      { key: 'city', label: 'City', placeholder: 'Mumbai' },
+                    ].map(field => (
+                      <div key={field.key}>
+                        <div style={{ fontSize: 11, color: BRAND.colors.muted, marginBottom: 4 }}>{field.label}</div>
+                        <input type={field.type || 'text'} value={matchForm[field.key]} onChange={e => setMatchForm(prev => ({ ...prev, [field.key]: field.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value }))}
+                          placeholder={field.placeholder}
+                          style={{ width: '100%', background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: '8px 12px', color: BRAND.colors.text, fontSize: 13, outline: 'none', fontFamily: "'Nunito', sans-serif", boxSizing: 'border-box' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Caption preview */}
+                <div>
+                  <div style={{ fontSize: 11, color: BRAND.colors.muted, marginBottom: 6 }}>📝 Instagram Caption (ready to use):</div>
+                  <div style={{ background: BRAND.colors.surface, borderRadius: 8, padding: '10px 14px', fontSize: 11, color: BRAND.colors.muted, lineHeight: 1.6, maxHeight: 80, overflow: 'hidden', borderLeft: `3px solid ${template.color}` }}>
+                    {template.caption.slice(0, 140)}...
+                  </div>
+                  <button onClick={() => copyCaption(template.id, template.caption)}
+                    style={{ marginTop: 6, background: 'transparent', border: 'none', fontSize: 11, color: copiedCaption === template.id ? '#4CAF50' : BRAND.colors.secondary, cursor: 'pointer', fontFamily: "'Nunito', sans-serif", padding: 0 }}>
+                    {copiedCaption === template.id ? '✅ Copied!' : '📋 Copy full caption'}
+                  </button>
+                </div>
+
+                {/* Video preview */}
+                {isReady && state?.url && (
+                  <video src={state.url} controls style={{ width: '100%', borderRadius: 10, maxHeight: 240, background: '#000' }} />
+                )}
+
+                {/* Progress bar while rendering */}
+                {isRendering && (
+                  <div>
+                    <div style={{ background: BRAND.colors.border, borderRadius: 4, height: 6 }}>
+                      <div style={{ width: `${state.progress || 15}%`, height: '100%', background: `linear-gradient(90deg, ${template.color}, ${template.color}88)`, borderRadius: 4, transition: 'width 0.5s' }} />
+                    </div>
+                    <div style={{ fontSize: 11, color: BRAND.colors.muted, marginTop: 4 }}>Creatomate is rendering your reel... ~30 seconds</div>
+                  </div>
+                )}
+
+                {/* Error */}
+                {state?.status === 'error' && (
+                  <div style={{ background: '#f4433622', border: '1px solid #f44336', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#f44336' }}>
+                    ❌ {state.error}
+                  </div>
+                )}
+
+                {/* Post result */}
+                {postResults[template.id] && (
+                  <div style={{ background: postResults[template.id].includes('✅') ? '#4CAF5022' : '#f4433622', border: `1px solid ${postResults[template.id].includes('✅') ? '#4CAF50' : '#f44336'}`, borderRadius: 8, padding: '10px 14px', fontSize: 12, color: postResults[template.id].includes('✅') ? '#4CAF50' : '#f44336' }}>
+                    {postResults[template.id]}
                   </div>
                 )}
 
                 {/* Action buttons */}
-                <div style={{ display: "flex", gap: 8 }}>
-                  {(!reel || reel.status === "error") && (
-                    <button onClick={() => generateReel(match)}
-                      style={{ flex: 1, background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "9px", fontSize: 12, fontWeight: 600, color: BRAND.colors.secondary, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
-                      🎬 Generate Reel
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => generateReel(template)} disabled={isRendering}
+                    style={{ flex: 1, background: isRendering ? BRAND.colors.border : BRAND.colors.surface, border: `1px solid ${isRendering ? BRAND.colors.border : template.color}`, borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 600, color: isRendering ? BRAND.colors.muted : template.color, cursor: isRendering ? 'default' : 'pointer', fontFamily: "'Nunito', sans-serif" }}>
+                    {isRendering ? '🎬 Rendering...' : isReady ? '🔄 Regenerate' : '🎬 Generate Reel'}
+                  </button>
+                  {isReady && (
+                    <button onClick={() => postToInstagram(template)} disabled={posting === template.id}
+                      style={{ flex: 1, background: posting === template.id ? BRAND.colors.border : BRAND.colors.primary, border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, color: '#fff', cursor: posting === template.id ? 'default' : 'pointer', fontFamily: "'Nunito', sans-serif" }}>
+                      {posting === template.id ? '📤 Posting...' : '🚀 Post to Instagram'}
                     </button>
-                  )}
-                  {(reel?.status === "generating" || reel?.status === "rendering") && (
-                    <div style={{ flex: 1, background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "9px", fontSize: 12, color: BRAND.colors.muted, textAlign: "center" }}>
-                      <div style={{ background: BRAND.colors.border, borderRadius: 4, height: 4, marginBottom: 6 }}>
-                        <div style={{ width: `${reel.progress||10}%`, height: "100%", background: BRAND.colors.accent, borderRadius: 4, transition: "width 0.5s" }} />
-                      </div>
-                      Rendering your reel...
-                    </div>
-                  )}
-                  {reel?.status === "succeeded" && (
-                    <>
-                      <button onClick={() => generateReel(match)}
-                        style={{ background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "9px 14px", fontSize: 12, color: BRAND.colors.muted, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
-                        🔄 Regenerate
-                      </button>
-                      <button onClick={() => postReelToInstagram(match)} disabled={posting === match.id}
-                        style={{ flex: 1, background: posting === match.id ? BRAND.colors.border : BRAND.colors.primary, border: "none", borderRadius: 8, padding: "9px", fontSize: 12, fontWeight: 700, color: "#fff", cursor: posting === match.id ? "default" : "pointer", fontFamily: "'Nunito', sans-serif" }}>
-                        {posting === match.id ? "📤 Posting..." : "🚀 Post to Instagram"}
-                      </button>
-                    </>
                   )}
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      <button onClick={fetchMatches} style={{ marginTop: 16, background: BRAND.colors.surface, border: `1px solid ${BRAND.colors.border}`, borderRadius: 8, padding: "9px 18px", fontSize: 12, color: BRAND.colors.muted, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
-        🔄 Refresh from Supabase
-      </button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
