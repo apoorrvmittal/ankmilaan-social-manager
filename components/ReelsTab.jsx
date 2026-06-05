@@ -165,6 +165,19 @@ export default function ReelsTab() {
     setPosting(null)
   }
 
+
+  const createTemplate = async () => {
+    setShowSetup(true)
+    const res = await fetch("/api/reel/setup", { method: "POST" })
+    const data = await res.json()
+    if (data.templateId) {
+      setTemplateId(data.templateId)
+      alert(`✅ Template created!\n\nTemplate ID: ${data.templateId}\n\nNow add this to Vercel:\nCREATOMATE_TEMPLATE_ID=${data.templateId}`)
+    } else {
+      alert("Error: " + (data.error || "Unknown error"))
+    }
+  }
+
   const getStatusBadge = (matchId) => {
     const s = reelStatus[matchId]
     if (!s) return null
@@ -220,6 +233,10 @@ export default function ReelsTab() {
               4. Copy the Template ID and API Key → add both to <strong>Vercel env vars</strong>:<br />
               &nbsp;&nbsp;CREATOMATE_API_KEY and CREATOMATE_TEMPLATE_ID
             </div>
+            <button onClick={createTemplate}
+              style={{ background: BRAND.colors.primary, border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'Nunito', sans-serif", marginTop: 4 }}>
+              ✨ Auto-Create Template for Me
+            </button>
           </div>
         </div>
       )}
