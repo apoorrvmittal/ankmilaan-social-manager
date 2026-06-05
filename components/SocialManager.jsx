@@ -1,3 +1,4 @@
+import ReelsTab from "./ReelsTab"
 import { useState, useEffect, useRef } from "react";
 
 const BRAND = {
@@ -95,6 +96,8 @@ function PostCard({ post, onGenerate, generating, onPost, posting }) {
           </button>
         )}
       </div>
+
+        {tab === "reels" && <ReelsTab />}
     </div>
   );
 }
@@ -220,6 +223,7 @@ export default function AankMilaanSocialManager() {
     { id: "posts", label: "📅 Content Queue" },
     { id: "campaigns", label: "🎯 Campaigns" },
     { id: "ai", label: "🤖 AI Strategist" },
+    { id: "reels", label: "🎬 Auto Reels" },
   ];
 
   const tabStyle = (id) => ({
@@ -450,3 +454,5 @@ export default function AankMilaanSocialManager() {
     </div>
   );
 }
+
+// This file gets the Reels tab injected via patch - see ReelsTab component below
